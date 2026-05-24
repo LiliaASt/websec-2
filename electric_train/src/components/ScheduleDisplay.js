@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, ListGroup, Badge, Spinner, Alert } from 'react-bootstrap';
+import { formatTime, formatFullDate } from '../utils/dateUtils'; 
 
 const ScheduleDisplay = ({ schedule, station, loading, isRoute = false }) => {
   if (loading) {
@@ -18,33 +19,6 @@ const ScheduleDisplay = ({ schedule, station, loading, isRoute = false }) => {
       </Alert>
     );
   }
-
-  const formatTime = (date) => {
-    if (!date) return 'Время уточняется';
-    try {
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
-      if (isNaN(dateObj.getTime())) return 'Время уточняется';
-      return dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return 'Время уточняется';
-    }
-  };
-
-  const formatFullDate = (date) => {
-    if (!date) return null;
-    try {
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
-      if (isNaN(dateObj.getTime())) return null;
-      return dateObj.toLocaleString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return null;
-    }
-  };
 
   return (
     <div className="schedule-display mt-3">
@@ -74,16 +48,16 @@ const ScheduleDisplay = ({ schedule, station, loading, isRoute = false }) => {
                 </div>
               </div>
               <Badge bg="success" pill>
-                {formatTime(item.departure)}
+                {formatTime(item.departure || item.arrival)}
               </Badge>
             </div>
 
             <div className="mt-2 small">
               {item.departure && (
-                <div>🕐 Отправление: {formatFullDate(item.departure) || 'Время уточняется'}</div>
+                <div>🕐 Отправление: {formatFullDate(item.departure) || formatTime(item.departure)} </div>
               )}
               {item.arrival && (
-                <div>🏁 Прибытие: {formatFullDate(item.arrival) || 'Время уточняется'}</div>
+                <div> 🏁 Прибытие: {formatFullDate(item.arrival) || formatTime(item.arrival)} </div>
               )}
               {item.duration && (
                 <div>⏱️ В пути: {typeof item.duration === 'number' ? Math.floor(item.duration / 60) + ' мин' : item.duration}</div>

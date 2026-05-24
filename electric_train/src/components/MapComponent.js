@@ -9,25 +9,32 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
-import { Style, Icon, Text, Fill, Stroke } from 'ol/style';
+import { Style, Text, Fill, Stroke, Circle } from 'ol/style';
 import Overlay from 'ol/Overlay';
 import { stationsData } from '../data/stations';
 
+const MAP_CONFIG = {
+  centerLon: parseFloat(process.env.REACT_APP_MAP_CENTER_LON),
+  centerLat: parseFloat(process.env.REACT_APP_MAP_CENTER_LAT),
+  initialZoom: 9,
+};
+
 const MapComponent = ({ onStationSelect, selectedStation }) => {
   const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
   const popupRef = useRef(null);
   const [popupContent, setPopupContent] = useState('');
-
-  const samaraCenter = fromLonLat([50.15, 53.2]);
+  const mapInstanceRef = useRef(null);
 
   useEffect(() => {
     if (!mapRef.current) return;
+
+    const mapCenter = fromLonLat([MAP_CONFIG.centerLon, MAP_CONFIG.centerLat]);
 
     const popupOverlay = new Overlay({
       element: popupRef.current,
       positioning: 'bottom-center',
       offset: [0, -10],
+      stopEvent: false,
     });
 
     const map = new Map({
@@ -38,7 +45,7 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
         }),
       ],
       view: new View({
-        center: samaraCenter,
+        center: mapCenter,
         zoom: 9,
       }),
       controls: [],
@@ -48,6 +55,11 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
     mapInstanceRef.current = map;
 
     const addStationsToMap = () => {
+      if (!stationsData || stationsData.length === 0) {
+        console.warn('Нет данных станций для отображения');
+        return;
+      }
+
       const features = [];
 
       stationsData.forEach(station => {
@@ -58,10 +70,10 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
           });
 
           feature.setStyle(new Style({
-            image: new Icon({
-              src: 'https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/examples/data/icon.png',
-              scale: 0.5,
-              anchor: [0.5, 1],
+            image: new Circle({
+              radius: 8,
+              fill: new Fill({ color: '#4547d7' }),
+              stroke: new Stroke({ color: '#ffffff', width: 2 })
             }),
             text: new Text({
               text: station.title,
@@ -73,8 +85,12 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
           }));
 
           features.push(feature);
+        } else {
+          console.warn(`Станция ${station.title} не имеет координат`);
         }
       });
+
+      console.log(`Добавлено ${features.length} точек на карту`);
 
       const vectorSource = new VectorSource({
         features: features,
@@ -89,8 +105,9 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
 
     addStationsToMap();
 
-    map.on('click', (event) => {
-      const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+    const clickHandler = (event) => {
+      const feature = map.forEachFeatureAtPixel(event.pixel, (feat) => feat);
+
       if (feature && feature.get('stationData')) {
         const stationData = feature.get('stationData');
         const coordinate = event.coordinate;
@@ -98,34 +115,36 @@ const MapComponent = ({ onStationSelect, selectedStation }) => {
         setPopupContent(`
           <strong>${stationData.title}</strong><br/>
           <small>${stationData.type || 'ЖД станция'}</small><br/>
-          <button onclick="window.selectStationFromMap('${stationData.code}')">
-            Посмотреть расписание
-          </button>
+          <button id="popup-select-btn">Посмотреть расписание</button>
         `);
         popupOverlay.setPosition(coordinate);
+
+        setTimeout(() => {
+            const btn = document.getElementById('popup-select-btn');
+            if (btn) {
+                btn.onclick = () => {
+                    onStationSelect(stationData);
+                    popupOverlay.setPosition(undefined);
+                };
+            }
+        }, 0);
+
       } else {
         popupOverlay.setPosition(undefined);
       }
-    });
-
-    window.selectStationFromMap = (code) => {
-      const station = stationsData.find(s => s.code === code);
-      if (station) {
-        onStationSelect(station);
-        popupOverlay.setPosition(undefined);
-      }
     };
+
+    map.on('click', clickHandler);
 
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(null);
-      }
-      delete window.selectStationFromMap;
+      map.un('click', clickHandler);
+      map.setTarget(undefined);
+      mapInstanceRef.current = null;
     };
-  }, [onStationSelect, samaraCenter]);
+  }, [onStationSelect]);
 
   return (
-    <div>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: '400px' }}></div>
       <div ref={popupRef} className="ol-popup" dangerouslySetInnerHTML={{ __html: popupContent }}></div>
     </div>

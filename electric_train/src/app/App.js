@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 import MapComponent from '../components/MapComponent';
@@ -13,7 +13,6 @@ function App() {
   const [routeSchedule, setRouteSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('station');
-  const mapRef = useRef(null);
 
   const loadStationSchedule = async (station) => {
     setLoading(true);
@@ -60,7 +59,6 @@ function App() {
             <MapComponent
               onStationSelect={handleStationSelect}
               selectedStation={selectedStation}
-              ref={mapRef}
             />
           </div>
 

@@ -75,9 +75,7 @@ export const searchStations = async (query) => {
 export const fetchStationSchedule = async (stationCode) => {
   try {
     console.log('Запрос расписания для станции:', stationCode);
-
-    const url = `${PROXY_URL}/schedule/?station=${stationCode}&transport_types=suburban&event=departure&limit=50&lang=ru_RU`;
-
+    const url = `${PROXY_URL}/schedule/?station=${stationCode}&transport_types=suburban&limit=50&lang=ru_RU&format=json`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -91,15 +89,35 @@ export const fetchStationSchedule = async (stationCode) => {
     }
 
     if (data.schedule && data.schedule.length > 0) {
-      return data.schedule.map(item => ({
-        number: item.thread?.number || '—',
-        title: item.thread?.title || 'Пригородный поезд',
-        departure: item.departure,
-        arrival: item.arrival,
-        platform: item.platform,
-        carrier: item.thread?.carrier,
-        duration: item.duration,
-      }));
+      return data.schedule.map(item => {
+        let departureTime = null;
+        let arrivalTime = null;
+
+        if (item.departure) departureTime = item.departure;
+        if (item.arrival) arrivalTime = item.arrival;
+
+        if (!departureTime && item.thread?.schedule?.length > 0) {
+          const firstStop = item.thread.schedule[0];
+          if (firstStop.departure) departureTime = firstStop.departure;
+          if (firstStop.arrival) arrivalTime = firstStop.arrival;
+        }
+
+        if (!departureTime && item.stops?.length > 0) {
+          const firstStop = item.stops[0];
+          if (firstStop.departure) departureTime = firstStop.departure;
+          if (firstStop.arrival) arrivalTime = firstStop.arrival;
+        }
+
+        return {
+          number: item.thread?.number || '—',
+          title: item.thread?.title || 'Пригородный поезд',
+          departure: departureTime,
+          arrival: arrivalTime,
+          platform: item.platform,
+          carrier: item.thread?.carrier,
+          duration: item.duration,
+        };
+      });
     }
 
     return [];

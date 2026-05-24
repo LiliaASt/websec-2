@@ -6,12 +6,21 @@ require('dotenv').config();
 const app = express();
 const port = 3001;
 
-const API_KEY = process.env.REACT_APP_API_KEY || '5c35214b-1ca9-4216-a86e-d852deeecfaf';
+const API_KEY = process.env.REACT_APP_API_KEY ?? null;
+
+if (!API_KEY) {
+    console.error("Invalid API_KEY");
+    return;
+}
 
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/rasp', async (req, res) => {
+  if (!API_KEY) {
+      return res.status(500).json({ error: 'API Key not configured on server' });
+  }
+
   try {
     const apiPath = req.originalUrl.replace('/api/rasp', '');
     const separator = apiPath.includes('?') ? '&' : '?';

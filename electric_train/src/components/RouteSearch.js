@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { Form, Button, Spinner } from 'react-bootstrap';
 import { searchStations } from '../services/YandexApi';
+
+const TODAY_STRING = new Date().toISOString().split('T')[0];
 
 const RouteSearch = ({ onRouteSearch, loading }) => {
   const [fromQuery, setFromQuery] = useState('');
   const [toQuery, setToQuery] = useState('');
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(TODAY_STRING);
   const [fromResults, setFromResults] = useState([]);
   const [toResults, setToResults] = useState([]);
   const [selectedFrom, setSelectedFrom] = useState(null);
@@ -54,8 +56,6 @@ const RouteSearch = ({ onRouteSearch, loading }) => {
     }
   };
 
-  const defaultDate = new Date().toISOString().split('T')[0];
-
   return (
     <div className="route-search">
       <Form onSubmit={handleSubmit}>
@@ -79,11 +79,11 @@ const RouteSearch = ({ onRouteSearch, loading }) => {
             </Button>
           </div>
           {fromResults.length > 0 && (
-            <div className="search-results mt-2" style={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', width: 'calc(100% - 2rem)' }}>
+            <div className="search-results mt-2" style={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', width: 'calc(100% - 2rem)', maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd' }}>
               {fromResults.map((station, idx) => (
                 <div
                   key={idx}
-                  className="result-item p-2 border rounded mb-1 cursor-pointer"
+                  className="result-item p-2 border-bottom cursor-pointer"
                   onClick={() => selectFromStation(station)}
                   style={{ cursor: 'pointer', backgroundColor: '#f8f9fa' }}
                 >
@@ -115,11 +115,11 @@ const RouteSearch = ({ onRouteSearch, loading }) => {
             </Button>
           </div>
           {toResults.length > 0 && (
-            <div className="search-results mt-2" style={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', width: 'calc(100% - 2rem)' }}>
+            <div className="search-results mt-2" style={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', width: 'calc(100% - 2rem)', maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd' }}>
               {toResults.map((station, idx) => (
                 <div
                   key={idx}
-                  className="result-item p-2 border rounded mb-1 cursor-pointer"
+                  className="result-item p-2 border-bottom cursor-pointer"
                   onClick={() => selectToStation(station)}
                   style={{ cursor: 'pointer', backgroundColor: '#f8f9fa' }}
                 >
@@ -137,7 +137,7 @@ const RouteSearch = ({ onRouteSearch, loading }) => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            min={defaultDate}
+            min={TODAY_STRING}
           />
         </Form.Group>
 
